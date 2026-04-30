@@ -10,7 +10,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
 import java.lang.invoke.MethodHandle;
@@ -29,29 +29,34 @@ public class InventoryArmorClickHandler {
 
         Slot hoveredSlot = ScreenHelper.INSTANCE.findSlot(screen, mouseX, mouseY);
 
-        if (hoveredSlot != null && hoveredSlot.getItem().getItem() instanceof ArmorItem item) {
+        if (hoveredSlot != null) {
+            ItemStack itemStack = hoveredSlot.getItem();
+            Equipable equipable = Equipable.get(itemStack);
 
-            Minecraft minecraft = ScreenHelper.INSTANCE.getMinecraft(screen);
-            Inventory inventory = minecraft.player.getInventory();
+            if (equipable != null && !itemStack.isStackable()) {
 
-            hoveredSlot = findNestedSlot(hoveredSlot);
-            if (hoveredSlot.container != inventory) return EventResult.PASS;
+                Minecraft minecraft = ScreenHelper.INSTANCE.getMinecraft(screen);
+                Inventory inventory = minecraft.player.getInventory();
 
-            Slot armorSlot = LocalArmorStandGearHandler.findInventorySlot(screen.getMenu(), item.getEquipmentSlot().getIndex(inventory.items.size()));
-            if (armorSlot == null) return EventResult.PASS;
+                hoveredSlot = findNestedSlot(hoveredSlot);
+                if (hoveredSlot.container != inventory) return EventResult.PASS;
 
-            if (!ItemStack.isSameItemSameTags(hoveredSlot.getItem(), armorSlot.getItem())) {
+                Slot armorSlot = LocalArmorStandGearHandler.findInventorySlot(screen.getMenu(), equipable.getEquipmentSlot().getIndex(inventory.items.size()));
+                if (armorSlot == null) return EventResult.PASS;
 
-                if (minecraft.gameMode.hasInfiniteItems()) {
+                if (!ItemStack.isSameItemSameTags(hoveredSlot.getItem(), armorSlot.getItem())) {
 
-                    performCreativeItemSwap(minecraft.player, hoveredSlot, armorSlot);
-                } else {
+                    if (minecraft.gameMode.hasInfiniteItems()) {
 
-                    minecraft.gameMode.handleInventoryMouseClick(screen.getMenu().containerId, armorSlot.index, hoveredSlot.getContainerSlot(), ClickType.SWAP, minecraft.player);
+                        performCreativeItemSwap(minecraft.player, hoveredSlot, armorSlot);
+                    } else {
+
+                        minecraft.gameMode.handleInventoryMouseClick(screen.getMenu().containerId, armorSlot.index, hoveredSlot.getContainerSlot(), ClickType.SWAP, minecraft.player);
+                    }
                 }
-            }
 
-            return EventResult.INTERRUPT;
+                return EventResult.INTERRUPT;
+            }
         }
 
         return EventResult.PASS;
